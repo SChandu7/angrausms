@@ -1,273 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-// import 'package:intl/intl.dart';
-// import 'package:permission_handler/permission_handler.dart';
-
-// void main() {
-//   runApp(const SmsSchedulerApp());
-// }
-
-// class SmsSchedulerApp extends StatelessWidget {
-//   const SmsSchedulerApp({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       debugShowCheckedModeBanner: false,
-//       theme: ThemeData(
-//         brightness: Brightness.light,
-//         primaryColor: Colors.deepPurple,
-//         scaffoldBackgroundColor: const Color(0xFFF3F4F6),
-//       ),
-//       home: const SmsHome(),
-//     );
-//   }
-// }
-
-// class SmsHome extends StatefulWidget {
-//   const SmsHome({super.key});
-
-//   @override
-//   State<SmsHome> createState() => _SmsHomeState();
-// }
-
-// class _SmsHomeState extends State<SmsHome> {
-//   static const MethodChannel _channel = MethodChannel('sms_scheduler_channel');
-
-//   final TextEditingController phoneCtrl = TextEditingController();
-//   final TextEditingController msgCtrl = TextEditingController();
-
-//   DateTime? scheduledTime;
-//   String status = "Waiting";
-
-//   Future<void> setDefaultSms() async {
-//     await _channel.invokeMethod('requestDefaultSms');
-//   }
-
-//   Future<void> pickDateTime() async {
-//     final date = await showDatePicker(
-//       context: context,
-//       firstDate: DateTime.now(),
-//       lastDate: DateTime(2100),
-//       initialDate: DateTime.now(),
-//     );
-
-//     if (date == null) return;
-
-//     final time = await showTimePicker(
-//       context: context,
-//       initialTime: TimeOfDay.now(),
-//     );
-
-//     if (time == null) return;
-
-//     setState(() {
-//       scheduledTime = DateTime(
-//         date.year,
-//         date.month,
-//         date.day,
-//         time.hour,
-//         time.minute,
-//       );
-//     });
-//   }
-
-//   Future<void> requestSmsPermission() async {
-//     var status = await Permission.sms.status;
-//     if (status.isDenied) {
-//       // Request the permission
-//       final result = await Permission.sms.request();
-//       if (result.isGranted) {
-//         print("SMS permission granted");
-//         // Proceed with your SMS functionality
-//       } else if (result.isPermanentlyDenied) {
-//         // User permanently denied, guide them to app settings
-//         openAppSettings();
-//       } else {
-//         print("SMS permission denied");
-//       }
-//     } else if (status.isGranted) {
-//       print("SMS permission already granted");
-//       // Permission already granted, proceed
-//     }
-//   }
-
-//   Future<void> scheduleSms() async {
-//     if (scheduledTime == null) {
-//       setState(() => status = "Please select date & time");
-//       return;
-//     }
-
-//     if (phoneCtrl.text.isEmpty || msgCtrl.text.isEmpty) {
-//       setState(() => status = "Please fill all fields");
-//       return;
-//     }
-
-//     requestSmsPermission();
-
-//     try {
-//       await _channel.invokeMethod('scheduleSms', {
-//         "phone": phoneCtrl.text,
-//         "message": msgCtrl.text,
-//         "time": scheduledTime!.millisecondsSinceEpoch,
-//       });
-
-//       setState(() {
-//         status = "SMS Scheduled Successfully";
-//       });
-//     } on PlatformException catch (e) {
-//       if (e.code == "NO_EXACT_ALARM_PERMISSION") {
-//         setState(() {
-//           status =
-//               "Enable 'Alarms & reminders' permission and tap Schedule again";
-//         });
-//       } else {
-//         setState(() {
-//           status = "Error: ${e.message}";
-//         });
-//       }
-//     }
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         elevation: 0,
-//         title: const Text("Smart SMS Scheduler"),
-//         centerTitle: true,
-//         backgroundColor: Colors.deepPurple,
-//       ),
-//       body: SingleChildScrollView(
-//         padding: const EdgeInsets.all(20),
-//         child: Column(
-//           children: [
-//             _card(
-//               icon: Icons.phone,
-//               child: TextField(
-//                 controller: phoneCtrl,
-//                 keyboardType: TextInputType.phone,
-//                 decoration: const InputDecoration(
-//                   labelText: "Phone Number",
-//                   border: InputBorder.none,
-//                 ),
-//               ),
-//             ),
-//             _card(
-//               icon: Icons.message,
-//               child: TextField(
-//                 controller: msgCtrl,
-//                 maxLines: 3,
-//                 decoration: const InputDecoration(
-//                   labelText: "Message",
-//                   border: InputBorder.none,
-//                 ),
-//               ),
-//             ),
-//             const SizedBox(height: 10),
-//             _card(
-//               icon: Icons.schedule,
-//               child: Row(
-//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                 children: [
-//                   Text(
-//                     scheduledTime == null
-//                         ? "Select Date & Time"
-//                         : DateFormat(
-//                             'dd MMM yyyy • hh:mm a',
-//                           ).format(scheduledTime!),
-//                     style: const TextStyle(fontSize: 16),
-//                   ),
-//                   IconButton(
-//                     icon: const Icon(Icons.edit),
-//                     onPressed: pickDateTime,
-//                   ),
-//                 ],
-//               ),
-//             ),
-//             const SizedBox(height: 30),
-//             _gradientButton(
-//               text: "Set as Default SMS App",
-//               icon: Icons.security,
-//               onTap: setDefaultSms,
-//               colors: const [Colors.orange, Colors.deepOrange],
-//             ),
-//             const SizedBox(height: 15),
-//             _gradientButton(
-//               text: "Schedule SMS",
-//               icon: Icons.send,
-//               onTap: scheduleSms,
-//               colors: const [Colors.deepPurple, Colors.purpleAccent],
-//             ),
-//             const SizedBox(height: 30),
-//             Text(
-//               "Status: $status",
-//               style: const TextStyle(
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.green,
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _card({required Widget child, required IconData icon}) {
-//     return Card(
-//       elevation: 4,
-//       margin: const EdgeInsets.symmetric(vertical: 10),
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16),
-//         child: Row(
-//           children: [
-//             Icon(icon, color: Colors.deepPurple),
-//             const SizedBox(width: 12),
-//             Expanded(child: child),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _gradientButton({
-//     required String text,
-//     required IconData icon,
-//     required VoidCallback onTap,
-//     required List<Color> colors,
-//   }) {
-//     return InkWell(
-//       onTap: onTap,
-//       borderRadius: BorderRadius.circular(30),
-//       child: Ink(
-//         height: 55,
-//         decoration: BoxDecoration(
-//           gradient: LinearGradient(colors: colors),
-//           borderRadius: BorderRadius.circular(30),
-//         ),
-//         child: Center(
-//           child: Row(
-//             mainAxisSize: MainAxisSize.min,
-//             children: [
-//               Icon(icon, color: Colors.white),
-//               const SizedBox(width: 10),
-//               Text(
-//                 text,
-//                 style: const TextStyle(
-//                   color: Colors.white,
-//                   fontSize: 16,
-//                   fontWeight: FontWeight.bold,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -483,62 +213,47 @@ class SmsHome extends StatefulWidget {
 class _SmsHomeState extends State<SmsHome> {
   static const MethodChannel _channel = MethodChannel('sms_scheduler_channel');
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchCtrl = TextEditingController();
 
-  final TextEditingController phoneCtrl = TextEditingController();
+  List<String> selectedPhones = [];
   final TextEditingController msgCtrl = TextEditingController();
+  List<String> selectedNames = [];
+  List<DateTime> scheduledTimes = [];
 
-  DateTime? scheduledTime;
   String status = "Waiting";
 
   Future<void> setDefaultSms() async {
     await _channel.invokeMethod('requestDefaultSms');
   }
 
-  Future<void> pickDateTime() async {
+  Future<void> pickAnotherDateTime() async {
     final date = await showDatePicker(
       context: context,
       firstDate: DateTime.now(),
       lastDate: DateTime(2100),
       initialDate: DateTime.now(),
     );
-
     if (date == null) return;
 
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: TimeOfDay(hour: 9, minute: 0),
     );
-
     if (time == null) return;
 
     setState(() {
-      scheduledTime = DateTime(
+      final dt = DateTime(
         date.year,
         date.month,
         date.day,
         time.hour,
         time.minute,
       );
-    });
-  }
 
-  Future<void> pickContact() async {
-    // Request permission
-    if (!await FlutterContacts.requestPermission()) {
-      setState(() => status = "Contacts permission denied");
-    }
-
-    final contact = await FlutterContacts.openExternalPick();
-
-    if (contact == null) return;
-
-    if (contact.phones.isEmpty) {
-      setState(() => status = "Selected contact has no phone number");
-      return;
-    }
-
-    setState(() {
-      phoneCtrl.text = contact.phones.first.number;
+      if (!scheduledTimes.contains(dt)) {
+        scheduledTimes.add(dt);
+        scheduledTimes.sort();
+      }
     });
   }
 
@@ -562,54 +277,140 @@ class _SmsHomeState extends State<SmsHome> {
     }
   }
 
+  Future<void> pickMultipleContacts() async {
+    if (!await FlutterContacts.requestPermission()) {
+      setState(() => status = "Contacts permission denied");
+    }
+
+    final allContacts = await FlutterContacts.getContacts(withProperties: true);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) {
+        List<Contact> filteredContacts = allContacts;
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.85,
+              child: Column(
+                children: [
+                  // 🔍 SEARCH BAR
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: "Search contacts",
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          final q = value.toLowerCase();
+                          filteredContacts = allContacts.where((c) {
+                            final name = c.displayName.toLowerCase();
+                            final phone = c.phones.isNotEmpty
+                                ? c.phones.first.number
+                                : "";
+                            return name.contains(q) || phone.contains(q);
+                          }).toList();
+                        });
+                      },
+                    ),
+                  ),
+
+                  // CONTACT LIST
+                  Expanded(
+                    child: ListView(
+                      children: filteredContacts
+                          .where((c) => c.phones.isNotEmpty)
+                          .map((c) {
+                            final phone = c.phones.first.number;
+                            final checked = selectedPhones.contains(phone);
+
+                            return CheckboxListTile(
+                              title: Text(c.displayName),
+                              subtitle: Text(phone),
+                              value: checked,
+                              onChanged: (val) {
+                                setModalState(() {
+                                  if (val == true &&
+                                      !selectedPhones.contains(phone)) {
+                                    selectedPhones.add(phone);
+                                    selectedNames.add(c.displayName);
+                                  } else {
+                                    selectedPhones.remove(phone);
+                                    selectedNames.remove(c.displayName);
+                                  }
+                                });
+                              },
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ),
+
+                  // DONE BUTTON
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        setState(() {});
+                        Navigator.pop(context);
+                      },
+                      child: Text("Done (${selectedPhones.length} selected)"),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> scheduleSms() async {
-    if (scheduledTime == null) {
-      setState(() => status = "Please select date & time");
+    if (selectedPhones.isEmpty ||
+        scheduledTimes.isEmpty ||
+        msgCtrl.text.isEmpty) {
+      setState(() => status = "Select contacts, message & times");
       return;
     }
 
-    if (phoneCtrl.text.isEmpty || msgCtrl.text.isEmpty) {
-      setState(() => status = "Please fill all fields");
-      return;
-    }
+    await requestSmsPermission();
+    await setDefaultSms();
 
-    requestSmsPermission();
-    setDefaultSms();
+    await _channel.invokeMethod('scheduleMultipleSms', {
+      "phones": selectedPhones,
+      "message": msgCtrl.text,
+      "times": scheduledTimes.map((e) => e.millisecondsSinceEpoch).toList(),
+    });
 
-    try {
-      await _channel.invokeMethod('scheduleSms', {
-        "phone": phoneCtrl.text,
-        "message": msgCtrl.text,
-        "time": scheduledTime!.millisecondsSinceEpoch,
-      });
+    final logs = await SmsLogStore.load();
 
-      // ✅ SAVE LOG HERE
-      final log = SmsLog(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        phone: phoneCtrl.text,
-        message: msgCtrl.text,
-        scheduledTime: scheduledTime!,
-      );
-
-      final logs = await SmsLogStore.load();
-      logs.add(log);
-      await SmsLogStore.save(logs);
-
-      setState(() {
-        status = "SMS Scheduled Successfully";
-      });
-    } on PlatformException catch (e) {
-      if (e.code == "NO_EXACT_ALARM_PERMISSION") {
-        setState(() {
-          status =
-              "Enable 'Alarms & reminders' permission and tap Schedule again";
-        });
-      } else {
-        setState(() {
-          status = "Error: ${e.message}";
-        });
+    for (final time in scheduledTimes) {
+      for (final phone in selectedPhones) {
+        logs.add(
+          SmsLog(
+            id: "${phone}_${time.millisecondsSinceEpoch}",
+            phone: phone,
+            message: msgCtrl.text,
+            scheduledTime: time,
+          ),
+        );
       }
     }
+
+    await SmsLogStore.save(logs);
+
+    setState(
+      () => status =
+          "Scheduled ${selectedPhones.length} × ${scheduledTimes.length} SMS",
+    );
   }
 
   @override
@@ -670,7 +471,7 @@ class _SmsHomeState extends State<SmsHome> {
         ),
       ),
       appBar: AppBar(
-        title: const Text("Angrau Sms "),
+        title: Center(child: const Text("ANGRAU SMS ")),
         backgroundColor: Colors.blueAccent,
         leading: IconButton(
           icon: const Icon(Icons.menu),
@@ -714,21 +515,54 @@ class _SmsHomeState extends State<SmsHome> {
         child: Column(
           children: [
             _card(
-              icon: Icons.phone,
-              child: TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: "Phone Number",
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.contacts, color: Colors.deepPurple),
-                    onPressed: pickContact, // 👈 OPEN CONTACTS
+              icon: Icons.contacts,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Selected Contacts",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
+                  const SizedBox(height: 8),
+
+                  if (selectedPhones.isEmpty)
+                    const Text(
+                      "No contacts selected",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: List.generate(selectedNames.length, (i) {
+                      return Chip(
+                        label: Text(selectedNames[i]),
+                        deleteIcon: const Icon(Icons.close),
+                        onDeleted: () {
+                          setState(() {
+                            selectedPhones.removeAt(i);
+                            selectedNames.removeAt(i);
+                          });
+                        },
+                      );
+                    }),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.contacts),
+                      label: const Text("Select Contacts"),
+                      onPressed: pickMultipleContacts,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 10),
 
             _card(
               icon: Icons.message,
@@ -741,36 +575,62 @@ class _SmsHomeState extends State<SmsHome> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             _card(
               icon: Icons.schedule,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    scheduledTime == null
-                        ? "Select Date & Time"
-                        : DateFormat(
-                            'dd MMM yyyy • hh:mm a',
-                          ).format(scheduledTime!),
-                    style: const TextStyle(fontSize: 16),
+                  const Text(
+                    "Scheduled Times",
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: pickDateTime,
+                  const SizedBox(height: 8),
+
+                  if (scheduledTimes.isEmpty)
+                    const Text(
+                      "No times selected",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: scheduledTimes.map((dt) {
+                      return Chip(
+                        label: Text(DateFormat('dd MMM • hh:mm a').format(dt)),
+                        deleteIcon: const Icon(Icons.close),
+                        onDeleted: () {
+                          setState(() {
+                            scheduledTimes.remove(dt);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text("Add Time"),
+                      onPressed: pickAnotherDateTime,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 10),
             _gradientButton(
               text: "Schedule SMS",
               icon: Icons.send,
               onTap: scheduleSms,
               colors: const [Colors.deepPurple, Colors.purpleAccent],
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 10),
             Text(
               "Status: $status",
               style: const TextStyle(
